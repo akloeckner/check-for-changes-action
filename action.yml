@@ -16,10 +16,10 @@ inputs:
 outputs:
   days:
     description: "Days since the last change in the repository"
-    value: ${{ steps.check_for_changes.outputs.digest }}
+    value: ${{ steps.check_for_changes.outputs.days }}
   changes_exist:
     description: "='true' if recent changes exist within threshold"
-    value: ${{ steps.check_for_changes.outputs.digest }}
+    value: ${{ steps.check_for_changes.outputs.changes_exist }}
 
 runs:
   using: "composite"
