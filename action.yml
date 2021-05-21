@@ -20,6 +20,9 @@ outputs:
   changes_exist:
     description: "='true' if recent changes exist within threshold"
     value: ${{ steps.check_for_changes.outputs.changes_exist }}
+  continue:
+    description: "='true' if workflow should continue"
+    value: ${{ steps.check_for_trigger.outputs.continue }}
 
 runs:
   using: "composite"
@@ -32,15 +35,31 @@ runs:
       CHECK_BRANCH: ${{ inputs.branch }}
       CHECK_DAYS: ${{ inputs.threshold }}
     run: |
-      echo "Workflog triggered by $GITHUB_EVENT_NAME"
       commitdate=$(curl -sL "https://api.github.com/repos/$CHECK_REPOSITORY/commits/$CHECK_BRANCH" | jq -r ".commit.author.date")
       commitdays=$(( ( $(date --utc +%s) - $(date --utc -d $commitdate +%s) ) / 86400 ))
       echo "::set-output name=days::$commitdays"
-      echo "Last commit was $commitdays days ago."
+      echo "Last commit was at $commitdate, $commitdays days ago."
       if [ $commitdays -lt $CHECK_DAYS ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
         echo "::set-output name=changes_exist::true"
         echo "There ARE recent changes in the repository."
       else
         echo "::set-output name=changes_exist::false"
         echo "There are NO recent changes in the repository."
+      fi
+
+  - name: Check for workflow trigger
+    id: check_for_trigger
+    shell: bash
+    run: |
+      echo "Workflow triggered by $GITHUB_EVENT_NAME."
+      if [ "${{ steps.check_for_changes.outputs.changes_exist }}" = "true" ]; then
+        echo "::set-output name=continue::true"
+        echo "Continue due to new CHANGES."
+      elif [ "$GITHUB_EVENT_NAME" = "push" ] \
+        || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+        echo "::set-output name=continue::true"
+        echo "Continue due to workflow TRIGGER."
+      else
+        echo "::set-output name=continue::false"
+        echo "Do NOT continue."
       fi
