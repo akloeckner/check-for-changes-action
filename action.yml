@@ -39,7 +39,7 @@ runs:
       commitdays=$(( ( $(date --utc +%s) - $(date --utc -d $commitdate +%s) ) / 86400 ))
       echo "::set-output name=days::$commitdays"
       echo "Last commit was at $commitdate, $commitdays days ago."
-      if [ $commitdays -lt $CHECK_DAYS ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+      if [ $commitdays -lt $CHECK_DAYS ]; then
         echo "::set-output name=changes_exist::true"
         echo "There ARE recent changes in the repository."
       else
